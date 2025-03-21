@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/task_provider.dart';
+import 'providers/routine_provider.dart';
+import 'providers/profile_provider.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/tasks_screen.dart';
+import 'screens/reminders_screen.dart';
+import 'screens/followups_screen.dart';
+import 'screens/meetings_screen.dart';
+import 'screens/profile_screen.dart';
 import 'widgets/task_calendar.dart';
 import 'widgets/task_list.dart';
 import 'widgets/add_task_dialog.dart';
 import 'helpers/database_helper.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,15 +30,23 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => TaskProvider(),
-      child: MaterialApp(
-        title: 'SAHAYATA',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          useMaterial3: true,
-        ),
-        home: const HomeScreen(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => TaskProvider()),
+        ChangeNotifierProvider(create: (context) => RoutineProvider()),
+        ChangeNotifierProvider(create: (context) => ProfileProvider()),
+      ],
+      child: Consumer<ProfileProvider>(
+        builder: (context, profileProvider, _) {
+          return MaterialApp(
+            title: 'SAHAYATA',
+            theme: AppTheme.theme,
+            home: const HomeScreen(),
+            routes: {
+              '/profile': (context) => const ProfileScreen(),
+            },
+          );
+        },
       ),
     );
   }
@@ -43,12 +60,24 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
+  final List<Widget> _screens = [
+    const DashboardScreen(),
+    const TasksScreen(),
+    const RemindersScreen(),
+    const FollowupsScreen(),
+    const MeetingsScreen(),
+  ];
+
   @override
   void initState() {
     super.initState();
-    // Load tasks when the screen is initialized
+    // Load tasks, routines, and profile when the screen is initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TaskProvider>().loadTasks();
+      context.read<RoutineProvider>().loadRoutines();
+      context.read<RoutineProvider>().initializeTimeSlots();
+      context.read<ProfileProvider>().loadProfile();
     });
   }
 
@@ -57,34 +86,50 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('SAHAYATA'),
-        centerTitle: true,
-      ),
-      body: Consumer<TaskProvider>(
-        builder: (context, taskProvider, child) {
-          return Column(
-            children: [
-              const TaskCalendar(),
-              Expanded(
-                child: TaskList(),
-              ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: Consumer<TaskProvider>(
-        builder: (context, taskProvider, child) {
-          return FloatingActionButton(
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
             onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AddTaskDialog(
-                  selectedDate: taskProvider.selectedDate,
-                ),
-              );
+              Navigator.pushNamed(context, '/profile');
             },
-            child: const Icon(Icons.add),
-          );
+          ),
+        ],
+      ),
+      body: _screens[_currentIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
         },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.task_outlined),
+            selectedIcon: Icon(Icons.task),
+            label: 'Tasks',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.notifications_outlined),
+            selectedIcon: Icon(Icons.notifications),
+            label: 'Reminders',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.follow_the_signs_outlined),
+            selectedIcon: Icon(Icons.follow_the_signs),
+            label: 'Follow-ups',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.meeting_room_outlined),
+            selectedIcon: Icon(Icons.meeting_room),
+            label: 'Meetings',
+          ),
+        ],
       ),
     );
   }

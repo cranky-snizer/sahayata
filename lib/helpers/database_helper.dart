@@ -31,14 +31,100 @@ class DatabaseHelper {
 
   Future<void> _createDB(Database db, int version) async {
     try {
+      // Create profiles table
       await db.execute('''
-        CREATE TABLE tasks(
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CREATE TABLE profiles (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          email TEXT NOT NULL,
+          photoUrl TEXT,
+          preferences TEXT,
+          categories TEXT,
+          categoryColors TEXT,
+          themeMode TEXT NOT NULL,
+          notificationsEnabled INTEGER NOT NULL,
+          notificationPreferences TEXT,
+          timeZone TEXT NOT NULL,
+          dateFormat TEXT NOT NULL,
+          timeFormat TEXT NOT NULL,
+          defaultReminderTime INTEGER NOT NULL,
+          workingDays TEXT NOT NULL,
+          workingHours TEXT
+        )
+      ''');
+
+      // Create tasks table
+      await db.execute('''
+        CREATE TABLE tasks (
+          id TEXT PRIMARY KEY,
           title TEXT NOT NULL,
           description TEXT,
+          dueDate TEXT NOT NULL,
           isCompleted INTEGER NOT NULL,
-          dueDate TEXT,
+          priority INTEGER NOT NULL,
+          category TEXT,
           createdAt TEXT NOT NULL
+        )
+      ''');
+
+      // Create routines table
+      await db.execute('''
+        CREATE TABLE routines (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          description TEXT,
+          startTime TEXT NOT NULL,
+          endTime TEXT NOT NULL,
+          daysOfWeek TEXT NOT NULL,
+          isRecurring INTEGER NOT NULL,
+          category TEXT NOT NULL,
+          priority INTEGER NOT NULL,
+          isCompleted INTEGER NOT NULL
+        )
+      ''');
+
+      // Create reminders table
+      await db.execute('''
+        CREATE TABLE reminders (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          description TEXT,
+          dueDate TEXT NOT NULL,
+          isCompleted INTEGER NOT NULL,
+          priority INTEGER NOT NULL,
+          category TEXT,
+          createdAt TEXT NOT NULL
+        )
+      ''');
+
+      // Create followups table
+      await db.execute('''
+        CREATE TABLE followups (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          description TEXT,
+          dueDate TEXT NOT NULL,
+          isCompleted INTEGER NOT NULL,
+          priority INTEGER NOT NULL,
+          category TEXT,
+          createdAt TEXT NOT NULL
+        )
+      ''');
+
+      // Create meetings table
+      await db.execute('''
+        CREATE TABLE meetings (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          description TEXT,
+          startTime TEXT NOT NULL,
+          endTime TEXT NOT NULL,
+          isCompleted INTEGER NOT NULL,
+          priority INTEGER NOT NULL,
+          category TEXT,
+          createdAt TEXT NOT NULL,
+          participants TEXT,
+          meetingLink TEXT
         )
       ''');
     } catch (e) {
